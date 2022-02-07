@@ -1,43 +1,60 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import './App.css';
 
-import {md5} from './util/md5'
+import {generateHash} from './util/md5'
 
+// connection instance
+const connection = new WebSocket('ws://127.0.0.1:8080');
+
+/**
+ * Application component
+ * @returns {JSX.Element}
+ * @constructor
+ */
 function App() {
   const [text, setText] = useState('');
   const [hashValue, setHashValue] = useState('');
 
-  let connection = new WebSocket('ws://127.0.0.1:8080');
+  useEffect(()=> {
+    connection.onopen = function () {
+      console.log('Connection established');
+    };
+    connection.onerror = function (error) {
+      console.warn('Can\'t connect to websocket server');
+    };
+    // reception de message du serveur..
+    connection.onmessage = function (event) {
+      try {
+        const message = JSON.parse(event.data);
+        console.log(message);
+      } catch (e) {
+        console.warn('error onmessage: ', event.data);
+        return;
+      }
+    };
 
-  connection.onopen = function () {
-    console.log('Connection established');
-  };
-
-  connection.onerror = function (error) {
-    console.warn('Can\'t connect to websocket server');
-  };
-
-  // reception de message du serveur..
-  connection.onmessage = function (message) {
-    try {
-      // const json = JSON.parse(message.data);
-    } catch (e) {
-      console.warn('error onmessage: ', message.data);
-      return;
+    return () => {
+      connection.close();
     }
-  };
+  }, []);
 
-  function generateHash() {
-    if(text === '') return;
-
-    const _hash = md5(text);
-    setHashValue(_hash);
-    // sending hash to server
-    connection.send(_hash);
+  /**
+   * input handler
+   * @param value
+   * @private
+   */
+  const _handleTextChange = ({ target: { value }}) => {
+    setText(value);
   }
 
-  const _handleTextChange = (e) => {
-    setText(e.value);
+  /**
+   * generate _hash value and send its to server
+   * @private
+   */
+  const _handleButtonClick = () => {
+    const _hash = generateHash(text);
+    setHashValue(_hash);
+    connection.send(_hash)
   }
 
   return (
@@ -49,16 +66,13 @@ function App() {
           <table>
             <tbody>
               <tr>
-                <td>Mon texte</td>
-                <td><input type="text" value={text} onChange={_handleTextChange}/></td>
-                <td><input type="button" value="Générer hash" onClick={generateHash}/></td>
+                <td>Enter your text</td>
+                <td><input type="text" onChange={_handleTextChange}/></td>
+                <td><input type="button" value="Generate hash" onClick={_handleButtonClick}/></td>
               </tr>
               <tr>
-                <td>Mon hash</td>
+                <td>Hash value</td>
                 <td><input type="text" name="monHash" value={hashValue} readOnly={true}/></td>
-              </tr>
-              <tr>
-                <td colSpan="2">(Hash décrypté, en cours ...).</td>
               </tr>
             </tbody>
           </table>
