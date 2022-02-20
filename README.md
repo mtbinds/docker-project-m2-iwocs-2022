@@ -15,17 +15,13 @@
 ## L'ajout des services
 
 ```
-
 docker service create --name python-bruteforce-md5
-
 ```
 
-## La création des images
+## La création de l'image Docker
 
 ```
-
-- docker-compose build
-- docker-compose up --scale esclave=5 --scale maitre=1
-- docker-compose ps
-
+docker-compose build
+docker-compose up --scale esclave=5 --scale maitre=1
+docker-compose ps
 ```
