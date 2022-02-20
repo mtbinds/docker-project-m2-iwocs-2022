@@ -1,7 +1,8 @@
 import {useState, useEffect} from 'react';
 import './App.css';
 
-import {generateHash} from './util/md5'
+import {generateHash} from './util/md5';
+import {BehaviourFactory} from './Behaviour';
 
 // connection instance
 const connection = new WebSocket('ws://127.0.0.1:8080');
@@ -14,6 +15,8 @@ const connection = new WebSocket('ws://127.0.0.1:8080');
 function App() {
   const [text, setText] = useState('');
   const [hashValue, setHashValue] = useState('');
+  const [behaviour, setBehaviour] = useState('normal');
+  let behaviourFactory = new BehaviourFactory();
 
   useEffect(()=> {
     connection.onopen = function () {
@@ -39,6 +42,18 @@ function App() {
   }, []);
 
   /**
+   * send message depending on behaviour
+   * @param value
+   * @param behaviour
+   */
+  const sendMessage = ({ value, behaviour = 'normal' }) => {
+    console.log(behaviour);
+    behaviourFactory.createBehaviour(behaviour).compute(()=> {
+      connection.send(value);
+    });
+  }
+
+  /**
    * input handler
    * @param value
    * @private
@@ -54,25 +69,35 @@ function App() {
   const _handleButtonClick = () => {
     const _hash = generateHash(text);
     setHashValue(_hash);
-    connection.send(_hash)
+    sendMessage({ value: _hash, behaviour: behaviour });
+  }
+
+  const _handleBehaviourChange = ({ target: { value }}) => {
+    setBehaviour(value);
   }
 
   return (
     <div className="App">
-      <div id="contenu">
-        <h1 id="titre">Cluster de bruteforce de hash MD5</h1>
-
-        <div id="blocMilieu">
+      <div id="content">
+        <h1 id="title">Cluster de bruteforce de hash MD5</h1>
+        <div>
+          <select value={behaviour} onChange={_handleBehaviourChange}>
+            <option value="gentle">Gentil</option>
+            <option value="normal">Normal</option>
+            <option value="aggressive">Agressif</option>
+          </select>
+        </div>
+        <div id="middle_block">
           <table>
             <tbody>
               <tr>
                 <td>Enter your text</td>
                 <td><input type="text" onChange={_handleTextChange}/></td>
-                <td><input type="button" value="Generate hash" onClick={_handleButtonClick}/></td>
+                <td><input type="button" value="Generate hash" onClick={_handleButtonClick} disabled={text === ''}/></td>
               </tr>
               <tr>
                 <td>Hash value</td>
-                <td><input type="text" name="monHash" value={hashValue} readOnly={true}/></td>
+                <td><input type="text" value={hashValue} readOnly={true}/></td>
               </tr>
             </tbody>
           </table>
