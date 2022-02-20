@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  esclave:
+    build: ./esclave
+    environment:
+      - HASH
+    depends_on:
+      - maitre
+  maitre:
+    build: ./maitre
