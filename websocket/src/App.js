@@ -2,7 +2,10 @@ import {useState, useEffect} from 'react';
 import './App.css';
 
 import {generateHash} from './util/md5';
+import isDef from './util/is-def';
+import nameGenerator from './util/name-generator';
 import {BehaviourFactory} from './Behaviour';
+import {getSocketName} from "./util/cookie";
 
 // connection instance
 const connection = new WebSocket('ws://127.0.0.1:8080');
@@ -47,9 +50,9 @@ function App() {
    * @param behaviour
    */
   const sendMessage = ({ value, behaviour = 'normal' }) => {
-    console.log(behaviour);
     behaviourFactory.createBehaviour(behaviour).compute(()=> {
-      connection.send(value);
+      const stringValue = JSON.stringify(value);
+      connection.send(stringValue);
     });
   }
 
@@ -69,7 +72,12 @@ function App() {
   const _handleButtonClick = () => {
     const _hash = generateHash(text);
     setHashValue(_hash);
-    sendMessage({ value: _hash, behaviour: behaviour });
+    sendMessage({ value: {
+        _hash: _hash,
+        user: getSocketName(document)
+      },
+      behaviour
+    });
   }
 
   const _handleBehaviourChange = ({ target: { value }}) => {
